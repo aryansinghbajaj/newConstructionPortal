@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-primary-subtle min-vh-100 d-flex flex-column justify-content-center">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-12 col-md-8 col-lg-6 text-center">
+                <h1 class="mb-5 text-light-emphasis" style="margin-top: -100px;" >Welcome to Project Portal</h1>
+                <div class="d-flex justify-content-center gap-4">
+                    <a href="{% url 'register' %}" class="btn btn-primary px-4 py-2" style="--bs-btn-bg: rgb(var(--bs-primary-rgb));">Register</a>
+                    <a href="{% url 'new_user_login' %}" class="btn btn-primary px-4 py-2" style="--bs-btn-bg: rgb(var(--bs-primary-rgb));">Login</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

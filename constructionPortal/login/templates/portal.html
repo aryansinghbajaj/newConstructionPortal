@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portal</title>
+  <!-- Bootstrap CSS -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-primary-subtle min-vh-100 d-flex flex-column justify-content-center align-items-center">
+  <div class="container text-center">
+    <h1 class="mb-5 text-light-emphasis">Welcome</h1>
+    <div class="d-flex justify-content-center gap-4">
+      <button 
+  class="btn btn-primary px-4 py-2" 
+  style="--bs-btn-bg: rgb(var(--bs-primary-rgb));"
+  onclick="location.href='/create-project'">
+  Create a New Project
+</button>
+<button 
+  class="btn btn-primary px-4 py-2"
+  style="--bs-btn-bg: rgb(var(--bs-primary-rgb));"
+  onclick="location.href='/open-project'">
+  Open an Existing Project
+</button>
+<button 
+  class="btn btn-danger px-4 py-2"
+  onclick="location.href='/confirm-delete'">
+  Delete an Existing Project
+</button>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
