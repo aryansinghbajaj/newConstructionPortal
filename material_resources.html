@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Materials & Resources</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <div class="container py-4">
+        <div class="row">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h1>Materials & Resources</h1>
+                    <a href="{% url 'dashboard' project_id=project.project_id %}" class="btn btn-secondary">Back to Dashboard</a>
+                </div>
+
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <form method="post">
+                            {% csrf_token %}
+                            
+                            <div class="mb-3">
+                                <label for="{{ form.required_materials.id_for_label }}" class="form-label">Required Materials <span class="text-danger">*</span></label>
+                                {{ form.required_materials }}
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="{{ form.labour.id_for_label }}" class="form-label">Labour <span class="text-danger">*</span></label>
+                                {{ form.labour }}
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="{{ form.machinery.id_for_label }}" class="form-label">Machinery <span class="text-danger">*</span></label>
+                                {{ form.machinery }}
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="{{ form.equipment.id_for_label }}" class="form-label">Equipment <span class="text-danger">*</span></label>
+                                {{ form.equipment }}
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="{{ form.tools.id_for_label }}" class="form-label">Tools <span class="text-danger">*</span></label>
+                                {{ form.tools }}
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="{{ form.consumables.id_for_label }}" class="form-label">Consumables <span class="text-danger">*</span></label>
+                                {{ form.consumables }}
+                            </div>
+
+                            <button type="submit" class="btn btn-primary">Save</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

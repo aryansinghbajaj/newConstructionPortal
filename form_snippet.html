@@ -1,0 +1,49 @@
+<style>
+    .form-group {
+        margin-bottom: 15px;
+    }
+    .form-group label {
+        display: block;
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+    .required-asterisk {
+        color: red;
+        font-weight: bold;
+        margin-left: 5px;
+    }
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        width: 100%;
+        padding: 8px;
+        margin-top: 5px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        box-sizing: border-box;
+    }
+    .form-group .error {
+        color: red;
+        font-size: 0.9em;
+        margin-top: 5px;
+    }
+</style>
+
+{% for field in form %}
+    <div class="form-group">
+        <label for="{{ field.id_for_label }}">
+            {{ field.label }}
+            {% if field.field.required %}
+                <span class="required-asterisk">*</span>
+            {% endif %}
+        </label>
+        {{ field }}
+        {% if field.errors %}
+            <div class="error">
+                {% for error in field.errors %}
+                    <p>{{ error }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+{% endfor %}
