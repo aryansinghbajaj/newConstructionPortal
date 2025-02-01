@@ -45,6 +45,13 @@ def register(request):
     
     return render(request, 'registration.html', {'form': form})
 
+# views.py
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from django.contrib.auth.hashers import check_password
+from .models import UserRegistration
+from .forms import UserLoginForm
+
 def user_login(request):
     if request.method == 'POST':
         form = UserLoginForm(request.POST)
@@ -55,9 +62,14 @@ def user_login(request):
             try:
                 user = UserRegistration.objects.get(userid=userid)
                 if check_password(password, user.password):
-                    request.session['userid'] = userid  # Store userid in session
+                    request.session['userid'] = userid
                     messages.success(request, 'Login successful!')
-                    return render(request, 'portal.html', {'user': user})
+                    
+                    if user.group and user.group.name == 'Managers':
+                        # Simply redirect to managers view
+                        return redirect('managers')
+                    else:
+                        return render(request, 'portal.html', {'user': user})
                 else:
                     messages.error(request, 'Invalid password')
             except UserRegistration.DoesNotExist:
@@ -131,6 +143,19 @@ def dashboard(request, project_id):
 def portal_view(request):
     return render(request,'portal.html')
 
+def managers_view(request):
+    # Simply get all projects
+    all_projects = Project.objects.all().order_by('-created_at')
+    return render(request, 'managers.html', {'all_projects': all_projects})
+
+    
+    # Get all projects from the database
+    all_projects = Project.objects.all().order_by('-created_at')
+    
+    context = {
+        'all_projects': all_projects
+    }
+    return render(request, 'managers.html', context)
 def materials_resources_view(request, project_id):
     if 'userid' not in request.session:
         messages.error(request, 'Please log in to access this page')
