@@ -45,7 +45,7 @@ def register(request):
     
     return render(request, 'registration.html', {'form': form})
 
-# views.py
+
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth.hashers import check_password
@@ -147,15 +147,6 @@ def managers_view(request):
     # Simply get all projects
     all_projects = Project.objects.all().order_by('-created_at')
     return render(request, 'managers.html', {'all_projects': all_projects})
-
-    
-    # Get all projects from the database
-    all_projects = Project.objects.all().order_by('-created_at')
-    
-    context = {
-        'all_projects': all_projects
-    }
-    return render(request, 'managers.html', context)
 def materials_resources_view(request, project_id):
     if 'userid' not in request.session:
         messages.error(request, 'Please log in to access this page')
@@ -163,10 +154,16 @@ def materials_resources_view(request, project_id):
     
     try:
         user = UserRegistration.objects.get(userid=request.session['userid'])
-        project = Project.objects.get(
-            project_id=project_id,
-            user=user
-        )
+        
+        # Check if user is a manager
+        if user.group == 'Managers':  # Adjust this condition based on how you store user groups
+            project = Project.objects.get(project_id=project_id)  # Managers can access any project
+        else:
+            # For associates, check project ownership
+            project = Project.objects.get(
+                project_id=project_id,
+                user=user
+            )
         
         materials_resources, created = MaterialsAndResources.objects.get_or_create(
             project=project
@@ -192,6 +189,9 @@ def materials_resources_view(request, project_id):
     except Project.DoesNotExist:
         messages.error(request, 'Project not found or access denied')
         return redirect('portal')
+def user_can_delete_files(user):
+    return user.group.name != 'Associates'
+
 def project_completion_view(request, project_id):
     if 'userid' not in request.session:
         messages.error(request, 'Please log in to access this page')
@@ -199,60 +199,37 @@ def project_completion_view(request, project_id):
     
     try:
         user = UserRegistration.objects.get(userid=request.session['userid'])
-        project = Project.objects.get(
-            project_id=project_id,
-            user=user
-        )
-        
-        project_completion, created = ProjectCompletion.objects.get_or_create(
-            project=project
-        )
-        
-        # Handle file deletion requests
-        if request.method == 'POST' and 'delete_file' in request.POST:
-            file_field = request.POST.get('delete_file')
-            if file_field == 'before_after_completion' and project_completion.before_after_completion:
-                if os.path.isfile(project_completion.before_after_completion.path):
-                    os.remove(project_completion.before_after_completion.path)
-                project_completion.before_after_completion = None
-                project_completion.save()
-                messages.success(request, 'Before/After Completion file has been deleted.')
-                return redirect('project_completion', project_id=project_id)
-            
-            elif file_field == 'completion_proof' and project_completion.completion_proof:
-                if os.path.isfile(project_completion.completion_proof.path):
-                    os.remove(project_completion.completion_proof.path)
-                project_completion.completion_proof = None
-                project_completion.save()
-                messages.success(request, 'Completion Proof file has been deleted.')
-                return redirect('project_completion', project_id=project_id)
-        
-        if request.method == 'POST' and 'delete_file' not in request.POST:
-            form = ProjectCompletionForm(
-                request.POST,
-                request.FILES,
-                instance=project_completion
-            )
-            
-            if form.is_valid():
-                # Delete old files if new ones are uploaded
-                if 'before_after_completion' in request.FILES:
-                    if project_completion.before_after_completion:
-                        old_file = project_completion.before_after_completion.path
-                        if os.path.isfile(old_file):
-                            os.remove(old_file)
-                
-                if 'completion_proof' in request.FILES:
-                    if project_completion.completion_proof:
-                        old_file = project_completion.completion_proof.path
-                        if os.path.isfile(old_file):
-                            os.remove(old_file)
-                
-                form.save()
-                messages.success(request, 'Project completion data has been saved successfully!')
-                return redirect('project_completion', project_id=project_id)
+        # Check if user is a manager
+        if user.group.name == 'Managers':
+            project = Project.objects.get(project_id=project_id)
         else:
-            form = ProjectCompletionForm(instance=project_completion)
+            project = Project.objects.get(project_id=project_id, user=user)
+            
+        project_completion, created = ProjectCompletion.objects.get_or_create(project=project)
+        
+        if request.method == 'POST' and 'delete_file' in request.POST:
+            if user_can_delete_files(user):
+                file_field = request.POST.get('delete_file')
+                file_mapping = {
+                    'before_after_completion': project_completion.before_after_completion,
+                    'completion_proof': project_completion.completion_proof,
+                }
+                if file_field in file_mapping and file_mapping[file_field]:
+                    if os.path.isfile(file_mapping[file_field].path):
+                        os.remove(file_mapping[file_field].path)
+                    setattr(project_completion, file_field, None)
+                    project_completion.save()
+                    messages.success(request, f'{file_field.replace("_", " ").title()} file has been deleted.')
+                return redirect('project_completion', project_id=project_id)
+            else:
+                messages.error(request, 'You do not have permission to delete files.')
+                return redirect('project_completion', project_id=project_id)
+        
+        form = ProjectCompletionForm(request.POST or None, request.FILES or None, instance=project_completion)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Project completion data has been saved successfully!')
+            return redirect('project_completion', project_id=project_id)
         
         return render(request, 'project_completion.html', {
             'form': form,
@@ -260,12 +237,8 @@ def project_completion_view(request, project_id):
             'current_before_after': project_completion.before_after_completion,
             'current_completion_proof': project_completion.completion_proof,
         })
-    
-    except UserRegistration.DoesNotExist:
-        messages.error(request, 'User not found')
-        return redirect('new_user_login')
-    except Project.DoesNotExist:
-        messages.error(request, 'Project not found or access denied')
+    except (UserRegistration.DoesNotExist, Project.DoesNotExist):
+        messages.error(request, 'User or project not found.')
         return redirect('portal')
 
 def work_execution_view(request, project_id):
@@ -275,74 +248,38 @@ def work_execution_view(request, project_id):
     
     try:
         user = UserRegistration.objects.get(userid=request.session['userid'])
-        project = Project.objects.get(
-            project_id=project_id,
-            user=user
-        )
-        
-        work_execution, created = WorkExecution.objects.get_or_create(
-            project=project
-        )
-        
-        # Handle file deletion requests
-        if request.method == 'POST' and 'delete_file' in request.POST:
-            file_field = request.POST.get('delete_file')
-            if file_field == 'site_visit_documentation' and work_execution.site_visit_documentation:
-                if os.path.isfile(work_execution.site_visit_documentation.path):
-                    os.remove(work_execution.site_visit_documentation.path)
-                work_execution.site_visit_documentation = None
-                work_execution.save()
-                messages.success(request, 'Site Visit Documentation file has been deleted.')
-                return redirect('work_execution', project_id=project_id)
-            
-            elif file_field == 'quotation_submission' and work_execution.quotation_submission:
-                if os.path.isfile(work_execution.quotation_submission.path):
-                    os.remove(work_execution.quotation_submission.path)
-                work_execution.quotation_submission = None
-                work_execution.save()
-                messages.success(request, 'Quotation Submission file has been deleted.')
-                return redirect('work_execution', project_id=project_id)
-            
-            elif file_field == 'quotation_approval' and work_execution.quotation_approval:
-                if os.path.isfile(work_execution.quotation_approval.path):
-                    os.remove(work_execution.quotation_approval.path)
-                work_execution.quotation_approval = None
-                work_execution.save()
-                messages.success(request, 'Quotation Approval file has been deleted.')
-                return redirect('work_execution', project_id=project_id)
-        
-        if request.method == 'POST' and 'delete_file' not in request.POST:
-            form = WorkExecutionForm(
-                request.POST,
-                request.FILES,
-                instance=work_execution
-            )
-            
-            if form.is_valid():
-                # Delete old files if new ones are uploaded
-                if 'site_visit_documentation' in request.FILES:
-                    if work_execution.site_visit_documentation:
-                        old_file = work_execution.site_visit_documentation.path
-                        if os.path.isfile(old_file):
-                            os.remove(old_file)
-                
-                if 'quotation_submission' in request.FILES:
-                    if work_execution.quotation_submission:
-                        old_file = work_execution.quotation_submission.path
-                        if os.path.isfile(old_file):
-                            os.remove(old_file)
-                
-                if 'quotation_approval' in request.FILES:
-                    if work_execution.quotation_approval:
-                        old_file = work_execution.quotation_approval.path
-                        if os.path.isfile(old_file):
-                            os.remove(old_file)
-                
-                form.save()
-                messages.success(request, 'Work execution data has been saved successfully!')
-                return redirect('work_execution', project_id=project_id)
+        # Check if user is a manager
+        if user.group.name == 'Managers':
+            project = Project.objects.get(project_id=project_id)
         else:
-            form = WorkExecutionForm(instance=work_execution)
+            project = Project.objects.get(project_id=project_id, user=user)
+            
+        work_execution, created = WorkExecution.objects.get_or_create(project=project)
+        
+        if request.method == 'POST' and 'delete_file' in request.POST:
+            if user_can_delete_files(user):
+                file_field = request.POST.get('delete_file')
+                file_mapping = {
+                    'site_visit_documentation': work_execution.site_visit_documentation,
+                    'quotation_submission': work_execution.quotation_submission,
+                    'quotation_approval': work_execution.quotation_approval,
+                }
+                if file_field in file_mapping and file_mapping[file_field]:
+                    if os.path.isfile(file_mapping[file_field].path):
+                        os.remove(file_mapping[file_field].path)
+                    setattr(work_execution, file_field, None)
+                    work_execution.save()
+                    messages.success(request, f'{file_field.replace("_", " ").title()} file has been deleted.')
+                return redirect('work_execution', project_id=project_id)
+            else:
+                messages.error(request, 'You do not have permission to delete files.')
+                return redirect('work_execution', project_id=project_id)
+        
+        form = WorkExecutionForm(request.POST or None, request.FILES or None, instance=work_execution)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Work execution data has been saved successfully!')
+            return redirect('work_execution', project_id=project_id)
         
         return render(request, 'work_execution.html', {
             'form': form,
@@ -351,12 +288,8 @@ def work_execution_view(request, project_id):
             'current_quotation_submission': work_execution.quotation_submission,
             'current_quotation_approval': work_execution.quotation_approval,
         })
-    
-    except UserRegistration.DoesNotExist:
-        messages.error(request, 'User not found')
-        return redirect('new_user_login')
-    except Project.DoesNotExist:
-        messages.error(request, 'Project not found or access denied')
+    except (UserRegistration.DoesNotExist, Project.DoesNotExist):
+        messages.error(request, 'User or project not found.')
         return redirect('portal')
 
 def billing_view(request, project_id):
@@ -366,56 +299,45 @@ def billing_view(request, project_id):
     
     try:
         user = UserRegistration.objects.get(userid=request.session['userid'])
-        project = Project.objects.get(
-            project_id=project_id,
-            user=user
-        )
-        
-        billing, created = Billing.objects.get_or_create(
-            project=project
-        )
-        
-        # Handle file deletion requests
-        if request.method == 'POST' and 'delete_payment_proof' in request.POST:
-            try:
-                payment_entry = PaymentEntry.objects.get(
-                    serial_no=request.POST.get('payment_entry_id'),
-                    billing=billing
-                )
-                if payment_entry.payment_proof:
-                    if os.path.isfile(payment_entry.payment_proof.path):
-                        os.remove(payment_entry.payment_proof.path)
-                    payment_entry.payment_proof = None
-                    payment_entry.save()
-                    messages.success(request, 'Payment proof has been deleted successfully.')
-                return redirect('billing', project_id=project_id)
-            except PaymentEntry.DoesNotExist:
-                messages.error(request, 'Payment entry not found.')
-                return redirect('billing', project_id=project_id)
-        
-        if request.method == 'POST':
-            if 'billing_form' in request.POST:
-                billing_form = BillingForm(request.POST, instance=billing)
-                payment_form = PaymentEntryForm()
-                
-                if billing_form.is_valid():
-                    billing_form.save()
-                    messages.success(request, 'Billing information has been updated successfully!')
-                    return redirect('billing', project_id=project_id)
-            
-            elif 'payment_form' in request.POST:
-                payment_form = PaymentEntryForm(request.POST, request.FILES)
-                billing_form = BillingForm(instance=billing)
-                
-                if payment_form.is_valid():
-                    payment = payment_form.save(commit=False)
-                    payment.billing = billing
-                    payment.save()
-                    messages.success(request, 'Payment entry has been added successfully!')
-                    return redirect('billing', project_id=project_id)
+        # Check if user is a manager
+        if user.group.name == 'Managers':
+            project = Project.objects.get(project_id=project_id)
         else:
-            billing_form = BillingForm(instance=billing)
-            payment_form = PaymentEntryForm()
+            project = Project.objects.get(project_id=project_id, user=user)
+            
+        billing, created = Billing.objects.get_or_create(project=project)
+        
+        if request.method == 'POST' and 'delete_payment_proof' in request.POST:
+            if user_can_delete_files(user):
+                try:
+                    payment_entry = PaymentEntry.objects.get(serial_no=request.POST.get('payment_entry_id'), billing=billing)
+                    if payment_entry.payment_proof and os.path.isfile(payment_entry.payment_proof.path):
+                        os.remove(payment_entry.payment_proof.path)
+                        payment_entry.payment_proof = None
+                        payment_entry.save()
+                        messages.success(request, 'Payment proof has been deleted successfully.')
+                    return redirect('billing', project_id=project_id)
+                except PaymentEntry.DoesNotExist:
+                    messages.error(request, 'Payment entry not found.')
+                    return redirect('billing', project_id=project_id)
+            else:
+                messages.error(request, 'You do not have permission to delete files.')
+                return redirect('billing', project_id=project_id)
+        
+        billing_form = BillingForm(request.POST or None, instance=billing)
+        payment_form = PaymentEntryForm(request.POST or None, request.FILES or None)
+        
+        if billing_form.is_valid():
+            billing_form.save()
+            messages.success(request, 'Billing information has been updated successfully!')
+            return redirect('billing', project_id=project_id)
+        
+        if payment_form.is_valid():
+            payment = payment_form.save(commit=False)
+            payment.billing = billing
+            payment.save()
+            messages.success(request, 'Payment entry has been added successfully!')
+            return redirect('billing', project_id=project_id)
         
         payment_entries = PaymentEntry.objects.filter(billing=billing).order_by('-payment_date')
         
@@ -425,13 +347,10 @@ def billing_view(request, project_id):
             'project': project,
             'payment_entries': payment_entries,
         })
-    
-    except UserRegistration.DoesNotExist:
-        messages.error(request, 'User not found')
-        return redirect('new_user_login')
-    except Project.DoesNotExist:
-        messages.error(request, 'Project not found or access denied')
+    except (UserRegistration.DoesNotExist, Project.DoesNotExist):
+        messages.error(request, 'User or project not found.')
         return redirect('portal')
+
 def delete_project(request):
     if request.method == 'POST':
         form = DeleteProjectForm(request.POST)
