@@ -2,29 +2,53 @@ import os
 from django.db import models
 from django.contrib.auth.hashers import make_password #securely store the hashed password in the database
 from django.core.validators import FileExtensionValidator
-class PreRegisteredUser(models.Model):
-  userid = models.CharField(max_length=50 ,primary_key=True)
-  email = models.EmailField(unique=True)
-  password_sent = models.CharField(max_length=100)
+from django.contrib.auth.hashers import make_password
+class UserGroup(models.Model):
+    name = models.CharField(max_length=50, unique=True)
+    description = models.TextField(blank=True)
 
-  def __str__(self):
-    return self.userid # the stored data will be represented by the userid
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = 'User Group'
+        verbose_name_plural = 'User Groups'
+
+class PreRegisteredUser(models.Model):
+    userid = models.CharField(max_length=50, primary_key=True)
+    email = models.EmailField(unique=True)
+    password_sent = models.CharField(max_length=100)
+    group = models.ForeignKey(
+        UserGroup,
+        on_delete=models.CASCADE,
+        null=True,  # Allow null temporarily for migration
+        default=None  # No default value
+    )
+
+
+    def __str__(self):
+        return self.userid
 
 class UserRegistration(models.Model):
-  name = models.CharField(max_length=100)
-  userid = models.CharField(max_length=50,primary_key=True)
-  email = models.EmailField(max_length=255, unique=True,null=True,blank=True)  
-  contact_no = models.CharField(max_length=255)
-  password = models.CharField(max_length=255)  # Hashed final password
- 
-  def save(self, *args, **kwargs):
-        # Hash the password before saving
-    if not self.password.startswith('pbkdf2_sha256$'):
-            self.password = make_password(self.password)
-    super().save(*args, **kwargs)
+    name = models.CharField(max_length=100)
+    userid = models.CharField(max_length=50, primary_key=True)
+    email = models.EmailField(max_length=255, unique=True, null=True, blank=True)
+    contact_no = models.CharField(max_length=255)
+    password = models.CharField(max_length=255)  # Hashed final password
+    group = models.ForeignKey(
+        UserGroup,
+        on_delete=models.CASCADE,
+        null=True,  # Allow null temporarily for migration
+        default=None  # No default value
+    )
 
-  def __str__(self):
-    return self.userid
+    def save(self, *args, **kwargs):
+        if not self.password.startswith('pbkdf2_sha256$'):
+            self.password = make_password(self.password)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.userid
   
 class Project(models.Model):
     project_id = models.CharField(max_length=50, primary_key=True)

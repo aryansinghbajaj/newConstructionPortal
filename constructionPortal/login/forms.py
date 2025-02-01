@@ -4,12 +4,12 @@ from django.contrib.auth.hashers import make_password
 
 class UserRegistrationForm(forms.ModelForm):
     userid = forms.CharField(
-        max_length=50, 
-        required=True, 
+        max_length=50,
+        required=True,
         widget=forms.TextInput(attrs={'placeholder': 'Enter User ID'})
     )
     email = forms.EmailField(
-        required=True, 
+        required=True,
         widget=forms.EmailInput(attrs={'placeholder': 'Enter Email'})
     )
     password_sent = forms.CharField(
@@ -28,7 +28,7 @@ class UserRegistrationForm(forms.ModelForm):
     class Meta:
         model = UserRegistration
         fields = ['name', 'userid', 'email', 'contact_no']
-        
+
     def clean(self):
         cleaned_data = super().clean()
         userid = cleaned_data.get('userid')
@@ -39,24 +39,23 @@ class UserRegistrationForm(forms.ModelForm):
         name = cleaned_data.get('name')
         contact_no = cleaned_data.get('contact_no')
 
-        # Validate all required fields are present
         if not all([userid, email, password_sent, new_password, confirm_password, name, contact_no]):
             raise forms.ValidationError("All fields are required.")
 
-        # Validate pre-registered user
         try:
             pre_registered_user = PreRegisteredUser.objects.get(
                 userid=userid,
                 email=email,
                 password_sent=password_sent
             )
+            # Store the group from pre-registered user for use in view
+            cleaned_data['group'] = pre_registered_user.group
         except PreRegisteredUser.DoesNotExist:
             raise forms.ValidationError("Invalid userid, email, or pre-registered password.")
-        
-        # Validate password match
+
         if new_password != confirm_password:
             raise forms.ValidationError("New passwords do not match")
-        
+
         return cleaned_data
 class UserLoginForm(forms.Form):
     userid = forms.CharField(max_length=50)

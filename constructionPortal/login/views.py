@@ -15,18 +15,17 @@ def register(request):
     if request.method == 'POST':
         form = UserRegistrationForm(request.POST)
         
-        # Print form data for debugging
         print("Form Data:", request.POST)
         
         if form.is_valid():
             try:
-                # Create user with the new password hashed
                 user = UserRegistration(
                     name=form.cleaned_data['name'],
                     userid=form.cleaned_data['userid'],
                     email=form.cleaned_data['email'],
                     contact_no=form.cleaned_data['contact_no'],
-                    password=make_password(form.cleaned_data['new_password'])
+                    password=make_password(form.cleaned_data['new_password']),
+                    group=form.cleaned_data['group']  # Set the group from pre-registered user
                 )
                 user.save()
                 
@@ -34,14 +33,10 @@ def register(request):
                 return redirect('home')
             
             except Exception as e:
-                # Log the full error for debugging
                 print(f"Registration Error: {str(e)}")
                 messages.error(request, f'Registration failed: {str(e)}')
         else:
-            # If form is invalid, print errors for debugging
             print("Form Errors:", form.errors)
-            
-            # Add form errors to messages
             for field, errors in form.errors.items():
                 for error in errors:
                     messages.error(request, f'{field.capitalize()}: {error}')
