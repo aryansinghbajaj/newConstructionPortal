@@ -156,7 +156,7 @@ def materials_resources_view(request, project_id):
         user = UserRegistration.objects.get(userid=request.session['userid'])
         
         # Check if user is a manager
-        if user.group == 'Managers':  # Adjust this condition based on how you store user groups
+        if user.group.name == 'Managers':  # Adjust this condition based on how you store user groups
             project = Project.objects.get(project_id=project_id)  # Managers can access any project
         else:
             # For associates, check project ownership
