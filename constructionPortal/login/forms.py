@@ -167,9 +167,9 @@ class ProjectCompletionForm(forms.ModelForm):
 class WorkExecutionForm(forms.ModelForm):
     class Meta:
         model = WorkExecution
-        fields = ['through', 'client', 'time_of_visit', 'record', 'site_visit_remarks', 
+        fields = ['through', 'client', 'client_name', 'time_of_visit', 'record', 'site_visit_remarks', 
                  'identification_of_problems', 'solutions', 'recommendations',
-                 'site_visit_documentation', 'quotation_submission', 'quotation_approval', 'client_name']
+                 'site_visit_documentation', 'quotation_submission', 'quotation_approval']
         
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -177,17 +177,19 @@ class WorkExecutionForm(forms.ModelForm):
         for field in self.fields:
             self.fields[field].required = True
             
-        # Add widgets with custom attributes
+        # Add widgets with custom attributes and choices
+        self.fields['through'].widget = forms.Select(
+            attrs={'class': 'form-control'},
+            choices=WorkExecution.THROUGH_CHOICES
+        )
+        self.fields['client'].widget = forms.Select(
+            attrs={'class': 'form-control'},
+            choices=WorkExecution.CLIENT_CHOICES
+        )
         self.fields['client_name'].widget = forms.Textarea(attrs={
             'rows': 1,
             'class': 'form-control',
             'placeholder': 'Enter client name (Required)'
-        })
-        self.fields['through'].widget = forms.Select(attrs={
-            'class': 'form-control'
-        })
-        self.fields['client'].widget = forms.Select(attrs={
-            'class': 'form-control'
         })
         self.fields['time_of_visit'].widget = forms.DateInput(attrs={
             'type': 'date',
@@ -231,6 +233,11 @@ class WorkExecutionForm(forms.ModelForm):
             'class': 'form-control',
             'accept': '.pdf,.png,.jpg,.jpeg'
         })
+        
+        # Make file fields not required since they can be null/blank in the model
+        self.fields['site_visit_documentation'].required = False
+        self.fields['quotation_submission'].required = False
+        self.fields['quotation_approval'].required = False
 class BillingForm(forms.ModelForm):
     class Meta:
         model = Billing
