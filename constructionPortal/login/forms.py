@@ -76,129 +76,161 @@ class OpenProjectForm(forms.Form):
 class MaterialsAndResourcesForm(forms.ModelForm):
     class Meta:
         model = MaterialsAndResources
-        fields = ['required_materials', 'labour', 'machinery', 'equipment', 'tools', 'consumables']  # Added consumables
-        widgets = {
-            'required_materials': forms.Textarea(attrs={
-                'rows': 2, 
-                'class': 'form-control',
-                'placeholder': 'Enter required materials'
-            }),
-            'labour': forms.Textarea(attrs={
-                'rows': 2, 
-                'class': 'form-control',
-                'placeholder': 'Enter labour details'
-            }),
-            'machinery': forms.Textarea(attrs={
-                'rows': 2, 
-                'class': 'form-control',
-                'placeholder': 'Enter machinery details'
-            }),
-            'equipment': forms.Textarea(attrs={
-                'rows': 2, 
-                'class': 'form-control',
-                'placeholder': 'Enter equipment details'
-            }),
-            'tools': forms.Textarea(attrs={
-                'rows': 2, 
-                'class': 'form-control',
-                'placeholder': 'Enter tools details'
-            }),
-            'consumables': forms.Textarea(attrs={  # New widget
-                'rows': 2, 
-                'class': 'form-control',
-                'placeholder': 'Enter consumables details'
-            }),
-        }
+        fields = ['required_materials', 'labour', 'machinery', 'equipment', 'tools', 'consumables']
+        
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Make all fields required
+        for field in self.fields:
+            self.fields[field].required = True
+            
+        # Add widgets with custom attributes
+        self.fields['required_materials'].widget = forms.Textarea(attrs={
+            'rows': 2,
+            'class': 'form-control',
+            'placeholder': 'Enter required materials (Required)'
+        })
+        
+        self.fields['labour'].widget = forms.Textarea(attrs={
+            'rows': 2,
+            'class': 'form-control',
+            'placeholder': 'Enter labour details (Required)'
+        })
+        
+        self.fields['machinery'].widget = forms.Textarea(attrs={
+            'rows': 2,
+            'class': 'form-control',
+            'placeholder': 'Enter machinery details (Required)'
+        })
+        
+        self.fields['equipment'].widget = forms.Textarea(attrs={
+            'rows': 2,
+            'class': 'form-control',
+            'placeholder': 'Enter equipment details (Required)'
+        })
+        
+        self.fields['tools'].widget = forms.Textarea(attrs={
+            'rows': 2,
+            'class': 'form-control',
+            'placeholder': 'Enter tools details (Required)'
+        })
+        
+        self.fields['consumables'].widget = forms.Textarea(attrs={
+            'rows': 2,
+            'class': 'form-control',
+            'placeholder': 'Enter consumables details (Required)'
+        })
 
 class ProjectCompletionForm(forms.ModelForm):
+    CLIENT_RATING_CHOICES = [
+        ('1', 'Poor'),
+        ('2', 'Fair'),
+        ('3', 'Good'),
+        ('4', 'Very Good'),
+        ('5', 'Excellent'),
+    ]
+
+    client_rating = forms.ChoiceField(
+        choices=CLIENT_RATING_CHOICES,
+        widget=forms.Select(attrs={
+            'class': 'form-control',
+        })
+    )
+
     class Meta:
         model = ProjectCompletion
         fields = ['before_after_completion', 'completion_proof', 'client_rating', 'client_feedback']
-        widgets = {
-            'before_after_completion': forms.FileInput(attrs={
-                'class': 'form-control',
-                'accept': '.pdf,.png,.jpg,.jpeg'
-            }),
-            'completion_proof': forms.FileInput(attrs={
-                'class': 'form-control',
-                'accept': '.pdf,.png,.jpg,.jpeg'
-            }),
-            'client_rating': forms.Select(attrs={
-                'class': 'form-control',
-            }),
-            'client_feedback': forms.Textarea(attrs={
-                'rows': 2,
-                'class': 'form-control',
-                'placeholder': 'Enter client feedback on quality and quantity of work'
-            }),
-        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # Make all fields required
+        for field in self.fields:
+            self.fields[field].required = True
+
+        # Add widgets with custom attributes
+        self.fields['before_after_completion'].widget = forms.FileInput(attrs={
+            'class': 'form-control',
+            'accept': '.pdf,.png,.jpg,.jpeg',
+        })
+        self.fields['completion_proof'].widget = forms.FileInput(attrs={
+            'class': 'form-control',
+            'accept': '.pdf,.png,.jpg,.jpeg',
+        })
+        self.fields['client_feedback'].widget = forms.Textarea(attrs={
+            'rows': 2,
+            'class': 'form-control',
+            'placeholder': 'Enter client feedback on quality and quantity of work (Required)',
+        })
+
 
 class WorkExecutionForm(forms.ModelForm):
     class Meta:
         model = WorkExecution
         fields = ['through', 'client', 'time_of_visit', 'record', 'site_visit_remarks', 
                  'identification_of_problems', 'solutions', 'recommendations',
-                 'site_visit_documentation', 'quotation_submission', 'quotation_approval','client_name']
-        widgets = {
-            'client_name': forms.Textarea(attrs={
-                'rows': 1,
-                'class': 'form-control',
-                'placeholder': 'Enter client name'
-            }),
-            'through': forms.Select(attrs={
-                'class': 'form-control',
-            }),
-            'client': forms.Select(attrs={
-                'class': 'form-control',
-            }),
-            'client_type': forms.Textarea(attrs={
-                'rows': 2,
-                'class': 'form-control',
-                'placeholder': 'Enter client type'
-            }),
-            'time_of_visit': forms.DateInput(attrs={
-                'type':'date',
-                'class':'form-control',
-                'placeholder':'Enter time of visit in dd/mm/yyyy'
-            }),
-            'record': forms.Textarea(attrs={
-                'rows': 2,
-                'class': 'form-control',
-                'placeholder': 'Enter record'
-            }),
-            'site_visit_remarks': forms.Textarea(attrs={
-                'rows': 2,
-                'class': 'form-control',
-                'placeholder': 'Enter site visit remarks'
-            }),
-            'identification_of_problems': forms.Textarea(attrs={
-                'rows': 2,
-                'class': 'form-control',
-                'placeholder': 'Enter identified problems'
-            }),
-            'solutions': forms.Textarea(attrs={
-                'rows': 2,
-                'class': 'form-control',
-                'placeholder': 'Enter solutions'
-            }),
-            'recommendations': forms.Textarea(attrs={
-                'rows': 2,
-                'class': 'form-control',
-                'placeholder': 'Enter recommendations'
-            }),
-            'site_visit_documentation': forms.FileInput(attrs={
-                'class': 'form-control',
-                'accept': '.pdf,.png,.jpg,.jpeg'
-            }),
-            'quotation_submission': forms.FileInput(attrs={
-                'class': 'form-control',
-                'accept': '.pdf,.png,.jpg,.jpeg'
-            }),
-            'quotation_approval': forms.FileInput(attrs={
-                'class': 'form-control',
-                'accept': '.pdf,.png,.jpg,.jpeg'
-            }),
-        }
+                 'site_visit_documentation', 'quotation_submission', 'quotation_approval', 'client_name']
+        
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Make all fields required
+        for field in self.fields:
+            self.fields[field].required = True
+            
+        # Add widgets with custom attributes
+        self.fields['client_name'].widget = forms.Textarea(attrs={
+            'rows': 1,
+            'class': 'form-control',
+            'placeholder': 'Enter client name (Required)'
+        })
+        self.fields['through'].widget = forms.Select(attrs={
+            'class': 'form-control'
+        })
+        self.fields['client'].widget = forms.Select(attrs={
+            'class': 'form-control'
+        })
+        self.fields['time_of_visit'].widget = forms.DateInput(attrs={
+            'type': 'date',
+            'class': 'form-control',
+            'placeholder': 'Enter time of visit in dd/mm/yyyy (Required)'
+        })
+        self.fields['record'].widget = forms.Textarea(attrs={
+            'rows': 2,
+            'class': 'form-control',
+            'placeholder': 'Enter record (Required)'
+        })
+        self.fields['site_visit_remarks'].widget = forms.Textarea(attrs={
+            'rows': 2,
+            'class': 'form-control',
+            'placeholder': 'Enter site visit remarks (Required)'
+        })
+        self.fields['identification_of_problems'].widget = forms.Textarea(attrs={
+            'rows': 2,
+            'class': 'form-control',
+            'placeholder': 'Enter identified problems (Required)'
+        })
+        self.fields['solutions'].widget = forms.Textarea(attrs={
+            'rows': 2,
+            'class': 'form-control',
+            'placeholder': 'Enter solutions (Required)'
+        })
+        self.fields['recommendations'].widget = forms.Textarea(attrs={
+            'rows': 2,
+            'class': 'form-control',
+            'placeholder': 'Enter recommendations (Required)'
+        })
+        self.fields['site_visit_documentation'].widget = forms.FileInput(attrs={
+            'class': 'form-control',
+            'accept': '.pdf,.png,.jpg,.jpeg'
+        })
+        self.fields['quotation_submission'].widget = forms.FileInput(attrs={
+            'class': 'form-control',
+            'accept': '.pdf,.png,.jpg,.jpeg'
+        })
+        self.fields['quotation_approval'].widget = forms.FileInput(attrs={
+            'class': 'form-control',
+            'accept': '.pdf,.png,.jpg,.jpeg'
+        })
 class BillingForm(forms.ModelForm):
     class Meta:
         model = Billing

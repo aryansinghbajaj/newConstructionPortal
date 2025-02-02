@@ -132,7 +132,7 @@
                                     {% for entry in payment_entries %}
                                     <tr>
                                         <td>{{ entry.serial_no }}</td>
-                                        <td>${{ entry.amount_paid }}</td>
+                                        <td>{{ entry.amount_paid }}</td>
                                         <td>{{ entry.client_detail }}</td>
                                         <td>{{ entry.mode_of_payment }}</td>
                                         <td>{{ entry.payment_date|date:"M d, Y" }}</td>

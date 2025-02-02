@@ -63,12 +63,12 @@ class Project(models.Model):
         return f"{self.project_id} - {self.user.userid}"
 class MaterialsAndResources(models.Model):
     project = models.OneToOneField(Project, on_delete=models.CASCADE, primary_key=True)
-    required_materials = models.TextField(blank=True, null=True)
-    labour = models.TextField(blank=True, null=True)
-    machinery = models.TextField(blank=True, null=True)
-    equipment = models.TextField(blank=True, null=True)
-    tools = models.TextField(blank=True, null=True)
-    consumables = models.TextField(blank=True, null=True)  # New field
+    required_materials = models.TextField(default="Not Specified")
+    labour = models.TextField(default="Not Specified")
+    machinery = models.TextField(default="Not Specified")
+    equipment = models.TextField(default="Not Specified")
+    tools = models.TextField(default="Not Specified")
+    consumables = models.TextField(default="Not Specified")
 
     def __str__(self):
         return f"Materials and Resources for Project {self.project.project_id}"
@@ -80,24 +80,23 @@ class ProjectCompletion(models.Model):
         upload_to='completion_files/%Y/%m/%d/',
         validators=[
             FileExtensionValidator(['pdf', 'png', 'jpg', 'jpeg'])
-        ],
-        blank=True,
-        null=True
+        ]  ,
+        null  = True,
+        blank = True
     )
     completion_proof = models.FileField(
         upload_to='completion_proofs/%Y/%m/%d/',
         validators=[
             FileExtensionValidator(['pdf', 'png', 'jpg', 'jpeg'])
         ],
-        blank=True,
-        null=True
+          null = True,
+            blank = True  # Removed blank=True and null=True
     )
     client_rating = models.IntegerField(
         choices=[(i, str(i)) for i in range(1, 6)],
-        blank=True,
-        null=True
+         default= 1 # Removed blank=True and null=True
     )
-    client_feedback = models.TextField(blank=True, null=True)
+    client_feedback = models.TextField(default='No feedback provided')  # Removed blank=True and null=True
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
 class WorkExecution(models.Model):
@@ -115,41 +114,37 @@ class WorkExecution(models.Model):
         ('Architects', 'Architects'),
         ('Individuals', 'Individuals'),
     ]
-    client_name = models.CharField(max_length=100, blank=True, null=True) 
+    
+    client_name = models.CharField(max_length=100, default="Not Specified")
     project = models.OneToOneField(Project, on_delete=models.CASCADE, primary_key=True)
-    through = models.CharField(max_length=20, choices=THROUGH_CHOICES, blank=True, null=True)
-    client = models.CharField(max_length=20, choices=CLIENT_CHOICES, blank=True, null=True)
-    time_of_visit = models.TextField(blank=True, null=True)
-    record = models.TextField(blank=True, null=True)
-    site_visit_remarks = models.TextField(blank=True, null=True)
-    identification_of_problems = models.TextField(blank=True, null=True)
-    solutions = models.TextField(blank=True, null=True)
-    recommendations = models.TextField(blank=True, null=True)
+    through = models.CharField(max_length=20, choices=THROUGH_CHOICES, default='Phone call')
+    client = models.CharField(max_length=20, choices=CLIENT_CHOICES, default='Individuals')
+    time_of_visit = models.TextField(default="Not Specified")
+    record = models.TextField(default="Not Specified")
+    site_visit_remarks = models.TextField(default="Not Specified")
+    identification_of_problems = models.TextField(default="Not Specified")
+    solutions = models.TextField(default="Not Specified")
+    recommendations = models.TextField(default="Not Specified")
     site_visit_documentation = models.FileField(
         upload_to='site_visit_docs/%Y/%m/%d/',
-        validators=[
-            FileExtensionValidator(['pdf', 'png', 'jpg', 'jpeg'])
-        ],
-        blank=True,
-        null=True
+        validators=[FileExtensionValidator(['pdf', 'png', 'jpg', 'jpeg'])],
+        null=True,  # Keep this nullable initially
+        blank=True  # Keep this blank initially
     )
     quotation_submission = models.FileField(
         upload_to='quotation_submission/%Y/%m/%d/',
-        validators=[
-            FileExtensionValidator(['pdf', 'png', 'jpg', 'jpeg'])
-        ],
-        blank=True,
-        null=True
+        validators=[FileExtensionValidator(['pdf', 'png', 'jpg', 'jpeg'])],
+        null=True,  # Keep this nullable initially
+        blank=True  # Keep this blank initially
     )
     quotation_approval = models.FileField(
         upload_to='quotation_approval/%Y/%m/%d/',
-        validators=[
-            FileExtensionValidator(['pdf', 'png', 'jpg', 'jpeg'])
-        ],
-        blank=True,
-        null=True
+        validators=[FileExtensionValidator(['pdf', 'png', 'jpg', 'jpeg'])],
+        null=True,  # Keep this nullable initially
+        blank=True  # Keep this blank initially
     )
     uploaded_at = models.DateTimeField(auto_now_add=True)
+
 class Billing(models.Model):
     project = models.OneToOneField(Project, on_delete=models.CASCADE, primary_key=True)
     total_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
