@@ -3,6 +3,10 @@ from django.db import models
 from django.contrib.auth.hashers import make_password #securely store the hashed password in the database
 from django.core.validators import FileExtensionValidator
 from django.contrib.auth.hashers import make_password
+from django.db.models.signals import post_save, post_delete
+from django.dispatch import receiver
+from decimal import Decimal
+
 class UserGroup(models.Model):
     name = models.CharField(max_length=50, unique=True)
     description = models.TextField(blank=True)
@@ -154,6 +158,15 @@ class Billing(models.Model):
     next_expected_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     next_expected_date = models.DateField(null=True, blank=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        # Calculate amount_left before saving
+        if self.total_amount is not None:
+            total_paid = PaymentEntry.objects.filter(billing=self).aggregate(
+                total=models.Sum('amount_paid'))['total'] or Decimal('0')
+            self.amount_left = self.total_amount - total_paid
+        super().save(*args, **kwargs)
+
 class PaymentEntry(models.Model):
     billing = models.ForeignKey(Billing, on_delete=models.CASCADE, related_name='payments')
     serial_no = models.AutoField(primary_key=True)
@@ -169,3 +182,9 @@ class PaymentEntry(models.Model):
         null=True
     )
     payment_date = models.DateField(null=True, blank=True)
+
+@receiver([post_save, post_delete], sender=PaymentEntry)
+def update_billing_amount_left(sender, instance, **kwargs):
+    """Update billing amount_left whenever a payment is saved or deleted"""
+    if instance.billing:
+        instance.billing.save()  # This will trigger the recalculation in Billing.save()

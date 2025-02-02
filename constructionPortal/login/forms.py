@@ -202,17 +202,13 @@ class WorkExecutionForm(forms.ModelForm):
 class BillingForm(forms.ModelForm):
     class Meta:
         model = Billing
-        fields = ['total_amount','estimated_amount', 'amount_left', 'next_expected_amount', 'next_expected_date']
+        fields = ['total_amount', 'estimated_amount', 'next_expected_amount', 'next_expected_date']
         widgets = {
             'total_amount': forms.NumberInput(attrs={
                 'class': 'form-control',
                 'step': '0.01'
             }),
-             'estimated_amount': forms.NumberInput(attrs={  
-                'class': 'form-control',
-                'step': '0.01'
-            }),
-            'amount_left': forms.NumberInput(attrs={
+            'estimated_amount': forms.NumberInput(attrs={
                 'class': 'form-control',
                 'step': '0.01'
             }),
@@ -225,7 +221,6 @@ class BillingForm(forms.ModelForm):
                 'type': 'date'
             }),
         }
-
 class PaymentEntryForm(forms.ModelForm):
     class Meta:
         model = PaymentEntry

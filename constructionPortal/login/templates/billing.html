@@ -45,11 +45,10 @@
                                 </div>
                             </div>
 
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label for="{{ billing_form.amount_left.id_for_label }}" class="form-label">Amount Left</label>
-                                    {{ billing_form.amount_left }}
-                                </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Amount Left</label>
+                                <input type="text" class="form-control" value="{{ billing.amount_left|default:0 }}" readonly>
+                            </div>
                                 <div class="col-md-6 mb-3">
                                     <label for="{{ billing_form.next_expected_amount.id_for_label }}" class="form-label">Next Expected Amount</label>
                                     {{ billing_form.next_expected_amount }}

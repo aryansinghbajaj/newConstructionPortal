@@ -299,7 +299,6 @@ def billing_view(request, project_id):
     
     try:
         user = UserRegistration.objects.get(userid=request.session['userid'])
-        # Check if user is a manager
         if user.group.name == 'Managers':
             project = Project.objects.get(project_id=project_id)
         else:
@@ -307,38 +306,45 @@ def billing_view(request, project_id):
             
         billing, created = Billing.objects.get_or_create(project=project)
         
-        if request.method == 'POST' and 'delete_payment_proof' in request.POST:
-            if user_can_delete_files(user):
-                try:
-                    payment_entry = PaymentEntry.objects.get(serial_no=request.POST.get('payment_entry_id'), billing=billing)
-                    if payment_entry.payment_proof and os.path.isfile(payment_entry.payment_proof.path):
-                        os.remove(payment_entry.payment_proof.path)
-                        payment_entry.payment_proof = None
-                        payment_entry.save()
-                        messages.success(request, 'Payment proof has been deleted successfully.')
-                    return redirect('billing', project_id=project_id)
-                except PaymentEntry.DoesNotExist:
-                    messages.error(request, 'Payment entry not found.')
-                    return redirect('billing', project_id=project_id)
-            else:
-                messages.error(request, 'You do not have permission to delete files.')
+        if request.method == 'POST':
+            if 'delete_payment_proof' in request.POST:
+                if user_can_delete_files(user):
+                    try:
+                        payment_entry = PaymentEntry.objects.get(
+                            serial_no=request.POST.get('payment_entry_id'), 
+                            billing=billing
+                        )
+                        if payment_entry.payment_proof and os.path.isfile(payment_entry.payment_proof.path):
+                            os.remove(payment_entry.payment_proof.path)
+                            payment_entry.payment_proof = None
+                            payment_entry.save()
+                            messages.success(request, 'Payment proof has been deleted successfully.')
+                    except PaymentEntry.DoesNotExist:
+                        messages.error(request, 'Payment entry not found.')
+                else:
+                    messages.error(request, 'You do not have permission to delete files.')
                 return redirect('billing', project_id=project_id)
+            
+            # Handle billing form submission
+            if 'billing_form' in request.POST:
+                billing_form = BillingForm(request.POST, instance=billing)
+                if billing_form.is_valid():
+                    billing_form.save()
+                    messages.success(request, 'Billing information has been updated successfully!')
+                    return redirect('billing', project_id=project_id)
+            
+            # Handle payment form submission
+            if 'payment_form' in request.POST:
+                payment_form = PaymentEntryForm(request.POST, request.FILES)
+                if payment_form.is_valid():
+                    payment = payment_form.save(commit=False)
+                    payment.billing = billing
+                    payment.save()
+                    messages.success(request, 'Payment entry has been added successfully!')
+                    return redirect('billing', project_id=project_id)
         
-        billing_form = BillingForm(request.POST or None, instance=billing)
-        payment_form = PaymentEntryForm(request.POST or None, request.FILES or None)
-        
-        if billing_form.is_valid():
-            billing_form.save()
-            messages.success(request, 'Billing information has been updated successfully!')
-            return redirect('billing', project_id=project_id)
-        
-        if payment_form.is_valid():
-            payment = payment_form.save(commit=False)
-            payment.billing = billing
-            payment.save()
-            messages.success(request, 'Payment entry has been added successfully!')
-            return redirect('billing', project_id=project_id)
-        
+        billing_form = BillingForm(instance=billing)
+        payment_form = PaymentEntryForm()
         payment_entries = PaymentEntry.objects.filter(billing=billing).order_by('-payment_date')
         
         return render(request, 'billing.html', {
@@ -346,7 +352,9 @@ def billing_view(request, project_id):
             'payment_form': payment_form,
             'project': project,
             'payment_entries': payment_entries,
+            'billing': billing,
         })
+        
     except (UserRegistration.DoesNotExist, Project.DoesNotExist):
         messages.error(request, 'User or project not found.')
         return redirect('portal')
